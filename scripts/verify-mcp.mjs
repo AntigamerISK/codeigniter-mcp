@@ -135,10 +135,20 @@ exit(0);
     "utf8",
   );
 
-  const child = spawn(CMD, ARGS, {
-    env: { ...process.env, APP_ROOT: root },
-    stdio: ["pipe", "pipe", "pipe"],
-  });
+  // On Windows, commands like `npx` are .cmd shims and need a shell. When the
+  // shell is used we pass a single command string (no args array) to avoid
+  // Node's DEP0190 deprecation warning.
+  const shell = process.platform === "win32";
+  const child = shell
+    ? spawn(`${CMD} ${ARGS.join(" ")}`, {
+        env: { ...process.env, APP_ROOT: root },
+        stdio: ["pipe", "pipe", "pipe"],
+        shell: true,
+      })
+    : spawn(CMD, ARGS, {
+        env: { ...process.env, APP_ROOT: root },
+        stdio: ["pipe", "pipe", "pipe"],
+      });
   child.stderr.on("data", () => {}); // keep stderr quiet unless it errors
   const client = new StdioClient(child);
 
