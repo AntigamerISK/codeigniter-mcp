@@ -5,7 +5,7 @@
 ![License: MIT](https://img.shields.io/github/license/X-Gunner/codeigniter-mcp)
 ![CI](https://img.shields.io/github/actions/workflow/status/X-Gunner/codeigniter-mcp/ci.yml?branch=main)
 ![Node](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen)
-![Tests](https://img.shields.io/badge/tests-114%2F114-brightgreen)
+![Tests](https://img.shields.io/badge/tests-136%2F136-brightgreen)
 ![SemVer](https://img.shields.io/badge/semver-2.0.0-blue)
 
 **MCP (Model Context Protocol)** server that accelerates the development of a
@@ -20,7 +20,7 @@ code without friction** and without structure hallucinations.
 Published on [npm](https://www.npmjs.com/package/codeigniter-mcp) — run it with
 `npx codeigniter-mcp`, no build required.
 
-> Version: `0.1.2` — Semantic versioning: any input/output schema change breaks
+> Version: `0.3.0` — Semantic versioning: any input/output schema change breaks
 > compatibility and must be versioned explicitly.
 
 ---
@@ -125,6 +125,15 @@ Optional overrides: `methodCase` (`"camelCase"` | `"snake_case"`) and
 `requireStrictTypes` (boolean). With `ci4`, `scaffold_full_resource` generates
 Controller + Model + Migration + View, `scaffold_service` generates the Model,
 and `scaffold_repository` is a no-op (CI4 uses Models).
+
+**Auto-detection**: if the file is missing, the profile is inferred from the
+project structure at APP_ROOT, so a native CI4 project works with zero config:
+
+- `app/Config/Paths.php` or the `spark` runner → `ci4`
+- `bin/migrate` or `app/Repositories` → `spec`
+- Unknown structure → `spec` (default)
+
+Precedence: explicit `.codeigniter-mcp.json` > structure detection > `spec`.
 
 ---
 
@@ -326,7 +335,7 @@ Generated layers (non-negotiable rules):
 ## Testing
 
 ```bash
-npm test               # 114 tests: unit + integration + e2e
+npm test               # 136 tests: unit + integration + e2e
 npm run test:watch     # watch mode
 npm run typecheck      # tsc --noEmit over src + tests
 ```

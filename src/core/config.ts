@@ -115,7 +115,7 @@ export const SPEC_CONVENTIONS: ProjectConventions = {
 };
 
 /** CodeIgniter 4 native profile. */
-const CI4_CONVENTIONS: ProjectConventions = {
+export const CI4_CONVENTIONS: ProjectConventions = {
   framework: "ci4",
   methodCase: "snake_case",
   requireStrictTypes: false,
@@ -128,14 +128,49 @@ const CI4_CONVENTIONS: ProjectConventions = {
 };
 
 /**
+ * File markers that identify a native CodeIgniter 4 project at APP_ROOT.
+ * `app/Config/Paths.php` and the `spark` runner are distinctive of CI4.
+ */
+const CI4_MARKERS: ReadonlyArray<string> = [
+  "app/Config/Paths.php",
+  "spark",
+];
+
+/** File markers that identify a spec-profile project at APP_ROOT. */
+const SPEC_MARKERS: ReadonlyArray<string> = [
+  "bin/migrate",
+  "app/Repositories",
+];
+
+/**
+ * Detects the framework profile from the project structure at APP_ROOT.
+ * Used only when `.codeigniter-mcp.json` is missing (an explicit file always
+ * wins). CI4 markers take precedence because `Paths.php`/`spark` are
+ * unmistakable; an unknown structure falls back to the "spec" profile.
+ */
+export function detectFramework(appRoot: string): FrameworkProfile {
+  if (CI4_MARKERS.some((marker) => existsSync(resolve(appRoot, marker)))) {
+    return "ci4";
+  }
+  if (SPEC_MARKERS.some((marker) => existsSync(resolve(appRoot, marker)))) {
+    return "spec";
+  }
+  return "spec";
+}
+
+/**
  * Reads `.codeigniter-mcp.json` from APP_ROOT (if present) and merges it with
- * the profile defaults. A missing file means the default "spec" profile.
- * Invalid content throws `ValidationError` so the server starts loudly.
+ * the profile defaults. A missing file falls back to `detectFramework()`:
+ * an explicit config file always wins, otherwise the project structure decides
+ * (spec by default). Invalid content throws `ValidationError` so the server
+ * starts loudly.
  */
 export function loadProjectConventions(appRoot: string): ProjectConventions {
   const file = resolve(appRoot, PROJECT_CONVENTIONS_FILE);
   if (!existsSync(file)) {
-    return SPEC_CONVENTIONS;
+    return detectFramework(appRoot) === "ci4"
+      ? CI4_CONVENTIONS
+      : SPEC_CONVENTIONS;
   }
 
   let raw: unknown;

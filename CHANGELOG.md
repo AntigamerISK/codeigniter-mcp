@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-13
+
+### Added
+
+- **Framework auto-detection**: when `.codeigniter-mcp.json` is missing, the
+  server now infers the profile from the project structure at APP_ROOT:
+  - `app/Config/Paths.php` or the `spark` runner → `ci4`.
+  - `bin/migrate` or `app/Repositories` → `spec`.
+  - Unknown structure → `spec` (default).
+- The explicit `.codeigniter-mcp.json` always wins over auto-detection (same
+  precedence as before: explicit file > structure detection > spec default).
+- 6 new tests covering `detectFramework` and the loader fallback (136 tests total).
+
 ## [0.2.0] - 2026-08-13
 
 ### Added

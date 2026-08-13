@@ -3,6 +3,8 @@ import {
   buildResourceContext,
   ci4MigrationTimestamp,
   createToolDeps,
+  CI4_CONVENTIONS,
+  detectFramework,
   loadProjectConventions,
   PROJECT_CONVENTIONS_FILE,
   SPEC_CONVENTIONS,
@@ -21,6 +23,7 @@ import { scaffoldFullResource } from "../../src/tools/scaffold-full-resource.js"
 import {
   createTestContext,
   makeTempAppRoot,
+  mkdirInAppRoot,
   writeInAppRoot,
 } from "../helpers.js";
 
@@ -29,17 +32,7 @@ const CTX = buildResourceContext("Patient", [
   { name: "age", type: "int", required: false },
 ]);
 
-const CI4_CONV: ProjectConventions = {
-  framework: "ci4",
-  methodCase: "snake_case",
-  requireStrictTypes: false,
-  controllerSuffix: "",
-  migration: {
-    up: ["php", "spark", "migrate"],
-    down: ["php", "spark", "migrate:rollback"],
-    appendName: false,
-  },
-};
+const CI4_CONV: ProjectConventions = CI4_CONVENTIONS;
 
 describe("project conventions loader (.codeigniter-mcp.json)", () => {
   it("defaults to the spec profile when the file is missing", () => {
@@ -104,6 +97,80 @@ describe("project conventions loader (.codeigniter-mcp.json)", () => {
         JSON.stringify({ framework: "ci5" }),
       );
       expect(() => loadProjectConventions(root)).toThrow(ValidationError);
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+describe("framework auto-detection (no .codeigniter-mcp.json)", () => {
+  it("detects ci4 from app/Config/Paths.php", () => {
+    const { root, cleanup } = makeTempAppRoot();
+    try {
+      writeInAppRoot(root, "app/Config/Paths.php", "<?php\n");
+      expect(detectFramework(root)).toBe("ci4");
+      expect(loadProjectConventions(root).framework).toBe("ci4");
+      expect(loadProjectConventions(root).migration.up).toEqual([
+        "php",
+        "spark",
+        "migrate",
+      ]);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("detects ci4 from the spark runner", () => {
+    const { root, cleanup } = makeTempAppRoot();
+    try {
+      writeInAppRoot(root, "spark", "#!/usr/bin/env php\n");
+      expect(detectFramework(root)).toBe("ci4");
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("detects spec from bin/migrate", () => {
+    const { root, cleanup } = makeTempAppRoot();
+    try {
+      writeInAppRoot(root, "bin/migrate", "#!/usr/bin/env php\n");
+      expect(detectFramework(root)).toBe("spec");
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("detects spec from app/Repositories (repository layer present)", () => {
+    const { root, cleanup } = makeTempAppRoot();
+    try {
+      mkdirInAppRoot(root, "app/Repositories");
+      expect(detectFramework(root)).toBe("spec");
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("ci4 markers take precedence when both sets are present", () => {
+    const { root, cleanup } = makeTempAppRoot();
+    try {
+      writeInAppRoot(root, "app/Config/Paths.php", "<?php\n");
+      writeInAppRoot(root, "bin/migrate", "#!/usr/bin/env php\n");
+      expect(detectFramework(root)).toBe("ci4");
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("an explicit .codeigniter-mcp.json always wins over auto-detection", () => {
+    const { root, cleanup } = makeTempAppRoot();
+    try {
+      writeInAppRoot(root, "app/Config/Paths.php", "<?php\n");
+      writeInAppRoot(
+        root,
+        PROJECT_CONVENTIONS_FILE,
+        JSON.stringify({ framework: "spec" }),
+      );
+      expect(loadProjectConventions(root).framework).toBe("spec");
     } finally {
       cleanup();
     }
