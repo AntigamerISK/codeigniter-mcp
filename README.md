@@ -15,7 +15,7 @@ The server exposes 7 tools and 4 resources that allow an LLM (Claude Code,
 Cursor, VS Code, etc.) to **generate, validate and maintain idiomatic framework
 code without friction** and without structure hallucinations.
 
-> Version: `0.1.0` — Semantic versioning: any input/output schema change breaks
+> Version: `0.1.2` — Semantic versioning: any input/output schema change breaks
 > compatibility and must be versioned explicitly.
 
 ---

@@ -11,11 +11,15 @@
 import { execFileSync, spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestContext, extractToolText, type TestContext } from "../helpers.js";
 
 const PROJECT_ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
+
+const require = createRequire(import.meta.url);
+const PKG_VERSION = (require("../../package.json") as { version: string }).version;
 
 const PRODUCT_ARGS = {
   resourceName: "Product",
@@ -149,7 +153,7 @@ describe("e2e: real server over stdio", () => {
       clientInfo: { name: "e2e-test", version: "1.0.0" },
     })) as { result?: { serverInfo?: { name?: string; version?: string } } };
     expect(init.result?.serverInfo?.name).toBe("codeigniter-mcp");
-    expect(init.result?.serverInfo?.version).toBe("0.1.0");
+    expect(init.result?.serverInfo?.version).toBe(PKG_VERSION);
     rpc.notify("notifications/initialized", {});
   });
 

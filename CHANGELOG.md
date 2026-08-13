@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-13
+
+### Fixed
+
+- The server now reports its version from `package.json` (`serverInfo`), so it
+  always matches the published package version instead of a hardcoded string.
+
 ## [0.1.1] - 2026-08-13
 
 ### Changed

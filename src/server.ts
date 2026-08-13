@@ -6,6 +6,7 @@
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { createRequire } from "node:module";
 import type { ToolDeps } from "./core/config.js";
 import { registerExplainConvention } from "./resources/explain-convention.js";
 import { registerLintAgainstFrameworkRules } from "./tools/lint-against-framework-rules.js";
@@ -16,8 +17,11 @@ import { registerScaffoldRepository } from "./tools/scaffold-repository.js";
 import { registerScaffoldService } from "./tools/scaffold-service.js";
 import { registerValidateRoute } from "./tools/validate-route.js";
 
+const require = createRequire(import.meta.url);
+
 export const SERVER_NAME = "codeigniter-mcp";
-export const SERVER_VERSION = "0.1.0";
+/** Read from package.json so the reported version never drifts. */
+export const SERVER_VERSION = (require("../package.json") as { version: string }).version;
 
 export const TOOL_NAMES = [
   "scaffold_full_resource",
