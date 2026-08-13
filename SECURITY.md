@@ -6,7 +6,7 @@ Please do **not** open a public issue for security vulnerabilities. Report them
 privately so they can be addressed before disclosure.
 
 - **Preferred channel**: create a private advisory via
-  [GitHub Security Advisories](https://github.com/AntigamerISK/codeigniter-mcp/security/advisories/new)
+  [GitHub Security Advisories](https://github.com/X-Gunner/codeigniter-mcp/security/advisories/new)
 - **Alternative**: email the maintainers (the email in the latest commit on `main`).
 
 You should receive an acknowledgement within 72 hours. Please include:

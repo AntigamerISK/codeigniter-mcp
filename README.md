@@ -2,8 +2,8 @@
 
 ![npm](https://img.shields.io/npm/v/codeigniter-mcp)
 ![npm downloads](https://img.shields.io/npm/dm/codeigniter-mcp)
-![License: MIT](https://img.shields.io/github/license/AntigamerISK/codeigniter-mcp)
-![CI](https://img.shields.io/github/actions/workflow/status/AntigamerISK/codeigniter-mcp/ci.yml?branch=main)
+![License: MIT](https://img.shields.io/github/license/X-Gunner/codeigniter-mcp)
+![CI](https://img.shields.io/github/actions/workflow/status/X-Gunner/codeigniter-mcp/ci.yml?branch=main)
 ![Node](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-114%2F114-brightgreen)
 ![SemVer](https://img.shields.io/badge/semver-2.0.0-blue)
@@ -405,4 +405,4 @@ tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-[MIT](LICENSE) © 2026 AntigamerISK
+[MIT](LICENSE) © 2026 X-Gunner
