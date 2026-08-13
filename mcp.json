@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "codeigniter-mcp": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "APP_ROOT": "/path/to/mi-framework",
+        "RATE_LIMIT_PER_MINUTE": "20"
+      }
+    }
+  }
+}
