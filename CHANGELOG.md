@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-13
+
 ### Changed
 
 - Require Node `>= 20.12` (CI matrix: Node 20/22/24; Node 18 is EOL and its
