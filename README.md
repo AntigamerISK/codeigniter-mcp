@@ -341,6 +341,23 @@ To test a single tool in isolation with the Inspector:
 APP_ROOT=/path/to/mi-framework npm run inspector
 ```
 
+### Acceptance verification
+
+Run the end-to-end acceptance checklist against a throwaway framework skeleton
+(no cleanup needed, it deletes itself):
+
+```bash
+npm run build   # once, so dist/ is up to date
+npm run verify  # tests the local build
+# or test the published package:
+VERIFY_MCP_COMMAND="npx -y codeigniter-mcp" npm run verify
+```
+
+It reports ✅/❌ per criterion: handshake, 7 tools, 4 resources, full CRUD
+scaffold (8 files), `php -l`, lint compliance, route validation, destructive-op
+guard, migration execution and path-traversal protection. Exit code `0` means
+everything passed.
+
 ---
 
 ## End-to-end example

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `npm run verify` — end-to-end acceptance checklist (`scripts/verify-mcp.mjs`)
+  that tests the server against a throwaway framework and reports ✅/❌ per
+  criterion.
+
 ### Changed
 
 - Security tooling: Dependabot, CodeQL and `npm audit --audit-level=high` in CI.
