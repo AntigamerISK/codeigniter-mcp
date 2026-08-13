@@ -9,8 +9,28 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it } from "vitest";
-import { buildServer, RESOURCE_URIS, TOOL_NAMES } from "../../src/server.js";
+import {
+  buildServer,
+  PROMPT_NAMES,
+  RESOURCE_URIS,
+  TOOL_NAMES,
+} from "../../src/server.js";
 import { createTestContext, extractToolText, type TestContext } from "../helpers.js";
+
+/** Extracts the JSON block from a prompt message (between ```json and ```). */
+function jsonFromPrompt(text: string): Record<string, unknown> {
+  const match = /```json\n([\s\S]*?)\n```/.exec(text);
+  expect(match).not.toBeNull();
+  return JSON.parse(match![1]!) as Record<string, unknown>;
+}
+
+/** Extracts the text of the first message of a GetPromptResult. */
+function promptText(result: {
+  messages: Array<{ content: { type: string; text?: string } }>;
+}): string {
+  const content = result.messages[0]!.content;
+  return content.type === "text" ? content.text ?? "" : "";
+}
 
 interface RunningServer {
   client: Client;
@@ -168,5 +188,70 @@ describe("MCP server (protocol)", () => {
     };
     expect(payload.success).toBe(true);
     expect(payload.compliant).toBe(true);
+  });
+
+  it("exposes the 3 token-saving prompts", async () => {
+    running = await startTestServer();
+    const { prompts } = await running.client.listPrompts();
+    const names = prompts.map((p) => p.name).sort();
+    expect(names).toEqual([...PROMPT_NAMES].sort());
+  });
+
+  it("create_full_resource builds ready-to-call scaffold arguments from compact fields", async () => {
+    running = await startTestServer();
+    const result = await running.client.getPrompt({
+      name: "create_full_resource",
+      arguments: {
+        resource: "Appointment",
+        fields: "patientId:int:true, reason:string, note:text:false",
+      },
+    });
+    const text = promptText(result);
+    expect(text).toContain("scaffold_full_resource");
+    expect(text).toContain("overwrite is not set");
+    const payload = jsonFromPrompt(text);
+    expect(payload.resourceName).toBe("Appointment");
+    expect(payload.fields).toEqual([
+      { name: "patientId", type: "int", required: true },
+      { name: "reason", type: "string", required: true },
+      { name: "note", type: "text", required: false },
+    ]);
+    expect(payload.withTests).toBe(true);
+    expect(payload.overwrite).toBe(false);
+  });
+
+  it("create_full_resource rejects an unknown field type with a clear error", async () => {
+    running = await startTestServer();
+    await expect(
+      running.client.getPrompt({
+        name: "create_full_resource",
+        arguments: { resource: "Appointment", fields: "when:datetime" },
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("run_migration prompt enforces the explicit confirm security rule", async () => {
+    running = await startTestServer();
+    const result = await running.client.getPrompt({
+      name: "run_migration",
+      arguments: { direction: "up", confirm: "true" },
+    });
+    const text = promptText(result);
+    expect(text).toContain("run_migration");
+    expect(text).toContain("Security rule");
+    expect(jsonFromPrompt(text)).toEqual({ direction: "up", confirm: true });
+  });
+
+  it("lint_file prompt builds the filePath argument", async () => {
+    running = await startTestServer();
+    const result = await running.client.getPrompt({
+      name: "lint_file",
+      arguments: { filePath: "app/Controllers/Home.php" },
+    });
+    const text = promptText(result);
+    expect(text).toContain("lint_against_framework_rules");
+    expect(jsonFromPrompt(text)).toEqual({
+      filePath: "app/Controllers/Home.php",
+    });
   });
 });

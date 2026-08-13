@@ -5,7 +5,7 @@
 ![License: MIT](https://img.shields.io/github/license/X-Gunner/codeigniter-mcp)
 ![CI](https://img.shields.io/github/actions/workflow/status/X-Gunner/codeigniter-mcp/ci.yml?branch=main)
 ![Node](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen)
-![Tests](https://img.shields.io/badge/tests-136%2F136-brightgreen)
+![Tests](https://img.shields.io/badge/tests-141%2F141-brightgreen)
 ![SemVer](https://img.shields.io/badge/semver-2.0.0-blue)
 
 **MCP (Model Context Protocol)** server that accelerates the development of a
@@ -13,9 +13,12 @@ PHP framework inspired by CodeIgniter: **MVC + optional Services/Repository
 layer** (lightweight Ports/Adapters). Its goal is **extreme development speed
 without sacrificing security**.
 
-The server exposes 7 tools and 4 resources that allow an LLM (Claude Code,
-Cursor, VS Code, etc.) to **generate, validate and maintain idiomatic framework
-code without friction** and without structure hallucinations.
+The server exposes 7 tools, 4 resources and 3 prompts that allow an LLM
+(Claude Code, Cursor, VS Code, etc.) to **generate, validate and maintain
+idiomatic framework code without friction** and without structure
+hallucinations. The prompts are token-saving templates: they turn a compact
+description into the exact tool arguments, so the model does not waste tokens
+reconstructing the schemas.
 
 It targets **CodeIgniter 4 natively** — auto-detected from the project
 structure (no config needed) — plus the built-in `spec` contract
@@ -25,7 +28,7 @@ structure (no config needed) — plus the built-in `spec` contract
 Published on [npm](https://www.npmjs.com/package/codeigniter-mcp) — run it with
 `npx codeigniter-mcp`, no build required.
 
-> Version: `0.3.0` — Semantic versioning: any input/output schema change breaks
+> Version: `0.4.0` — Semantic versioning: any input/output schema change breaks
 > compatibility and must be versioned explicitly.
 
 ---
@@ -36,17 +39,18 @@ Published on [npm](https://www.npmjs.com/package/codeigniter-mcp) — run it wit
 2. [Installation](#installation)
 3. [Configuration](#configuration)
 4. [Usage in MCP clients](#usage-in-mcp-clients)
-5. [Tools](#tools)
-6. [Resources](#resources)
-7. [Generated PHP framework contract](#generated-php-framework-contract)
-8. [Security model](#security-model)
-9. [Testing](#testing)
-10. [Local development](#local-development)
-11. [End-to-end example](#end-to-end-example)
-12. [FAQ](#faq)
-13. [Roadmap](#roadmap)
-14. [Contributing](#contributing)
-15. [License](#license)
+5. [Prompts](#prompts)
+6. [Tools](#tools)
+7. [Resources](#resources)
+8. [Generated PHP framework contract](#generated-php-framework-contract)
+9. [Security model](#security-model)
+10. [Testing](#testing)
+11. [Local development](#local-development)
+12. [End-to-end example](#end-to-end-example)
+13. [FAQ](#faq)
+14. [Roadmap](#roadmap)
+15. [Contributing](#contributing)
+16. [License](#license)
 
 ---
 
@@ -163,6 +167,28 @@ MCP_TRANSPORT=http MCP_PORT=3000 APP_ROOT=/path/to/mi-framework npx -y codeignit
 ```
 
 Clients connect to `http://localhost:3000/`.
+
+---
+
+## Prompts
+
+Token-saving templates for the high-frequency operations: instead of having the
+model reconstruct the tool schema by hand, ask it to use a prompt — the model
+fills in only the values and gets the exact ready-to-call arguments.
+
+| Prompt | What it does |
+|---|---|
+| `create_full_resource` | `resource` + compact `fields` (`name:type:required`) → exact `scaffold_full_resource` arguments |
+| `run_migration` | `direction` + `confirm` → exact `run_migration` arguments (enforces the confirm security rule) |
+| `lint_file` | `filePath` → exact `lint_against_framework_rules` arguments |
+
+**Example** (full CRUD in one compact prompt):
+
+> Use the `create_full_resource` prompt with `resource: Appointment` and
+> `fields: patientId:int:true, doctorId:int:true, reason:string, note:text:false`.
+
+The prompt returns the JSON to call `scaffold_full_resource` directly — the
+model never has to guess the schema.
 
 ---
 
@@ -351,7 +377,7 @@ Generated layers (non-negotiable rules):
 ## Testing
 
 ```bash
-npm test               # 136 tests: unit + integration + e2e
+npm test               # 141 tests: unit + integration + e2e
 npm run test:watch     # watch mode
 npm run typecheck      # tsc --noEmit over src + tests
 ```
@@ -409,10 +435,10 @@ $env:VERIFY_MCP_COMMAND = "npx -y codeigniter-mcp"
 node scripts/verify-mcp.mjs
 ```
 
-It reports ✅/❌ per criterion: handshake, 7 tools, 4 resources, full CRUD
-scaffold (8 files), `php -l`, lint compliance, route validation, destructive-op
-guard, migration execution and path-traversal protection. Exit code `0` means
-everything passed.
+It reports ✅/❌ per criterion: handshake, 7 tools, 4 resources, 3 prompts, full
+CRUD scaffold (8 files), `php -l`, lint compliance, route validation,
+destructive-op guard, migration execution and path-traversal protection. Exit
+code `0` means everything passed.
 
 ---
 

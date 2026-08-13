@@ -8,6 +8,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createRequire } from "node:module";
 import type { ToolDeps } from "./core/config.js";
+import { registerPrompts } from "./prompts/index.js";
 import { registerExplainConvention } from "./resources/explain-convention.js";
 import { registerLintAgainstFrameworkRules } from "./tools/lint-against-framework-rules.js";
 import { registerRunMigration } from "./tools/run-migration.js";
@@ -40,6 +41,8 @@ export const RESOURCE_URIS = [
   "convention://security-rules",
 ] as const;
 
+export { PROMPT_NAMES } from "./prompts/index.js";
+
 /** Builds the MCP server with all tools and resources registered. */
 export function buildServer(deps: ToolDeps): McpServer {
   const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
@@ -51,5 +54,6 @@ export function buildServer(deps: ToolDeps): McpServer {
   registerRunMigration(server, deps);
   registerLintAgainstFrameworkRules(server, deps);
   registerExplainConvention(server);
+  registerPrompts(server);
   return server;
 }

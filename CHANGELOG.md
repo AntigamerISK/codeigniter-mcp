@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-13
+
+### Added
+
+- **3 token-saving MCP prompts** (`prompts/list`):
+  - `create_full_resource` — turns a compact description (`Appointment`,
+    `patientId:int:true, reason:string, note:text:false`) into the exact
+    `scaffold_full_resource` arguments. Saves tokens by removing the need to
+    hand-write the tool schema.
+  - `run_migration` — builds the `run_migration` arguments and enforces the
+    explicit `confirm` security rule in the instructions.
+  - `lint_file` — builds the `lint_against_framework_rules` arguments.
+- `npm run verify` acceptance checklist now covers the prompt surface
+  (12 criteria, was 11).
+- 5 new integration tests over the real protocol (prompt listing + calls),
+  141 tests total.
+
 ## [0.3.0] - 2026-08-13
 
 ### Added

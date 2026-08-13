@@ -192,6 +192,14 @@ exit(0);
       resources.result?.resources?.map((r) => r.uri).join(", "),
     );
 
+    /* 3b. Prompt surface (token-saving templates) */
+    const prompts = await client.request("prompts/list", {});
+    report(
+      prompts.result?.prompts?.length === 3,
+      `Exposes 3 token-saving prompts (found ${prompts.result?.prompts?.length ?? 0})`,
+      prompts.result?.prompts?.map((p) => p.name).join(", "),
+    );
+
     /* 4. Full CRUD scaffold */
     const t0 = performance.now();
     const sc = await client.request("tools/call", {
