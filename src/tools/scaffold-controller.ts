@@ -18,7 +18,9 @@ import {
 import { handleToolCall, type ToolResult } from "../core/errors.js";
 import { safeWriteFile } from "../core/fs-safe.js";
 import { ScaffoldControllerInput } from "../schemas/scaffold-controller.schema.js";
+import { renderCi4Controller } from "../templates/ci4.template.js";
 import {
+  ALL_CONTROLLER_METHODS,
   assertNoSqlInController,
   renderControllerTemplate,
 } from "../templates/controller.template.js";
@@ -36,17 +38,29 @@ export async function scaffoldController(
   return handleToolCall(async () => {
     const parsed = ScaffoldControllerInput.parse(input);
     const ctx = buildResourceContext(parsed.resourceName, []);
+    const warnings: string[] = [];
 
-    const content = renderControllerTemplate(ctx, parsed.methods);
-    // Hard framework rule: zero SQL in controllers.
+    const isCi4 = deps.conventions.framework === "ci4";
+    let rel: string;
+    let content: string;
+
+    if (isCi4) {
+      rel = `app/Controllers/${ctx.className}.php`;
+      content = renderCi4Controller(ctx);
+      if (parsed.methods.length !== ALL_CONTROLLER_METHODS.length) {
+        warnings.push(
+          "methods selection applies to the spec profile; the ci4 profile generates the full CI4 CRUD.",
+        );
+      }
+    } else {
+      rel = `app/Controllers/${ctx.className}Controller.php`;
+      content = renderControllerTemplate(ctx, parsed.methods);
+    }
+
+    // Hard framework rule: zero SQL in controllers (both profiles).
     assertNoSqlInController(content);
 
-    const absPath = resolveInAppRoot(
-      deps.appRoot,
-      "app",
-      "Controllers",
-      `${ctx.className}Controller.php`,
-    );
+    const absPath = resolveInAppRoot(deps.appRoot, ...rel.split("/"));
     const result = safeWriteFile(absPath, content, parsed.overwrite);
     const relative = toRelativePath(deps.appRoot, absPath);
 
@@ -54,8 +68,8 @@ export async function scaffoldController(
       filePath: relative,
       written: result.written,
       warnings: result.written
-        ? []
-        : [`${relative} already exists and overwrite=false; not modified.`],
+        ? warnings
+        : [...warnings, `${relative} already exists and overwrite=false; not modified.`],
     };
   });
 }

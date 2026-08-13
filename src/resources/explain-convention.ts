@@ -35,7 +35,12 @@ const CONVENTIONS: Record<string, ConventionEntry> = {
 - PHP 8.2+, PSR-4, strict typing (\`declare(strict_types=1);\` in every generated file).
 
 Rule: the file name must match the declared class/interface
-(except migrations, which carry a timestamp prefix).`,
+(except migrations, which carry a timestamp prefix).
+
+Profiles (optional \`.codeigniter-mcp.json\` at the project root):
+- \`framework: "spec"\` (default): the conventions above.
+- \`framework: "ci4"\` (CodeIgniter 4 native): controllers without the
+  \`Controller\` suffix, methods in snake_case, strict_types not required.`,
   },
   architecture: {
     title: "Framework architecture (MVC + Service + Repository)",
@@ -52,7 +57,13 @@ NOT full Hexagonal). Absolute priority: development speed.
 - Repository: concrete adapter against the database (PDO + prepared statements).
 - Entity/DTO: typed object that travels between layers, never loose arrays.
 - Migration: follows the framework's native migration system
-  (\`php bin/migrate up|down\`).`,
+  (\`php bin/migrate up|down\`).
+
+Project profiles (optional \`.codeigniter-mcp.json\` at APP_ROOT):
+- \`framework: "ci4"\` targets CodeIgniter 4 natively: Controller + Model
+  (Query Builder) + forge migrations + views; migrations run with
+  \`php spark migrate\`; data access lives in Models (no Repository layer).
+- \`framework: "spec"\` (default) targets the built-in contract above.`,
   },
   "folder-structure": {
     title: "Framework folder structure",

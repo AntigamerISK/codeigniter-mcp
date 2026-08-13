@@ -79,7 +79,8 @@ export function registerRunMigration(server: McpServer, deps: ToolDeps): void {
     {
       title: "Run migrations (DESTRUCTIVE)",
       description:
-        "Runs framework migrations (up/down) through the native runner `php bin/migrate`. " +
+        "Runs framework migrations (up/down) through the project's native migration runner " +
+        "(spec: `php bin/migrate`; ci4: `php spark migrate`). " +
         "DESTRUCTIVE OPERATION: requires an explicit confirm: true. Without that flag nothing is executed.",
       inputSchema: RunMigrationInput,
     },

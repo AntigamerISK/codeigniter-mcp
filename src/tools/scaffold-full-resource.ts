@@ -14,9 +14,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   buildResourceContext,
+  ci4MigrationTimestamp,
   FIELD_TYPE_TO_SAMPLE,
   migrationTimestamp,
   resolveInAppRoot,
+  snakeToPascal,
   toRelativePath,
   type FieldDef,
   type ResourceContext,
@@ -30,6 +32,13 @@ import {
   renderControllerTemplate,
   ALL_CONTROLLER_METHODS,
 } from "../templates/controller.template.js";
+import {
+  renderCi4Controller,
+  renderCi4Migration,
+  renderCi4Model,
+  renderCi4ModelTest,
+  renderCi4View,
+} from "../templates/ci4.template.js";
 import { renderEntityTemplate } from "../templates/entity.template.js";
 import { renderMigrationTemplate } from "../templates/migration.template.js";
 import {
@@ -198,79 +207,115 @@ export async function scaffoldFullResource(
   return handleToolCall(async () => {
     const parsed = ScaffoldFullResourceInput.parse(input);
     const ctx = buildResourceContext(parsed.resourceName, parsed.fields);
-    const timestamp = migrationTimestamp(deps.now());
 
     // Heavy write tool → consume a rate limiter token.
     deps.rateLimiter.consume();
 
     const warnings: string[] = [];
+    const files: Array<{ rel: string; content: string }> = [];
 
-    const controllerContent = renderControllerTemplate(
-      ctx,
-      [...ALL_CONTROLLER_METHODS],
-    );
-    assertNoSqlInController(controllerContent);
-
-    const { content: serviceContent, warnings: serviceWarnings } =
-      renderServiceTemplate(ctx);
-    warnings.push(...serviceWarnings);
-
-    const files: Array<{ rel: string; content: string }> = [
-      {
-        rel: `app/Controllers/${ctx.className}Controller.php`,
-        content: controllerContent,
-      },
-      {
-        rel: `app/Services/${ctx.className}Service.php`,
-        content: serviceContent,
-      },
-    ];
-
-    if (parsed.withRepository) {
+    if (deps.conventions.framework === "ci4") {
+      const ts = ci4MigrationTimestamp(deps.now());
       files.push(
         {
-          rel: `app/Repositories/${ctx.className}RepositoryInterface.php`,
-          content: renderRepositoryInterfaceTemplate(ctx),
+          rel: `app/Controllers/${ctx.className}.php`,
+          content: renderCi4Controller(ctx),
         },
         {
-          rel: `app/Repositories/${ctx.className}Repository.php`,
-          content: renderRepositoryTemplate(ctx),
+          rel: `app/Models/${ctx.className}Model.php`,
+          content: renderCi4Model(ctx),
+        },
+        {
+          rel: `app/Database/Migrations/${ts}_Create${snakeToPascal(ctx.tableName)}.php`,
+          content: renderCi4Migration(ctx, ts),
+        },
+        {
+          rel: `app/Views/${ctx.kebabName}/index.php`,
+          content: renderCi4View(ctx),
         },
       );
-    } else {
-      warnings.push(
-        "withRepository=false: no repositories were generated. The Service depends on the interface " +
-          `(${ctx.className}RepositoryInterface, contract first); use scaffold_repository to generate it.`,
-      );
-    }
-
-    files.push(
-      {
-        rel: `app/Entities/${ctx.className}.php`,
-        content: renderEntityTemplate(ctx),
-      },
-      {
-        rel: `app/Database/Migrations/${timestamp}_create_${ctx.tableName}_table.php`,
-        content: renderMigrationTemplate(ctx, timestamp),
-      },
-    );
-
-    if (parsed.withTests) {
       if (parsed.withRepository) {
-        files.push({
-          rel: `tests/Unit/${ctx.className}ServiceTest.php`,
-          content: renderServiceTest(ctx),
-        });
-      } else {
         warnings.push(
-          "withTests=true but withRepository=false: the Service unit test is skipped " +
-            "(it depends on the repository interface, still missing).",
+          "withRepository=true is ignored in the ci4 profile: CI4 handles data " +
+            "access through Models (see the generated Model).",
         );
       }
-      files.push({
-        rel: `tests/Integration/${ctx.className}ControllerTest.php`,
-        content: renderControllerTest(ctx),
-      });
+      if (parsed.withTests) {
+        files.push({
+          rel: `tests/unit/${ctx.className}ModelTest.php`,
+          content: renderCi4ModelTest(ctx),
+        });
+      }
+    } else {
+      const timestamp = migrationTimestamp(deps.now());
+
+      const controllerContent = renderControllerTemplate(
+        ctx,
+        [...ALL_CONTROLLER_METHODS],
+      );
+      assertNoSqlInController(controllerContent);
+
+      const { content: serviceContent, warnings: serviceWarnings } =
+        renderServiceTemplate(ctx);
+      warnings.push(...serviceWarnings);
+
+      files.push(
+        {
+          rel: `app/Controllers/${ctx.className}Controller.php`,
+          content: controllerContent,
+        },
+        {
+          rel: `app/Services/${ctx.className}Service.php`,
+          content: serviceContent,
+        },
+      );
+
+      if (parsed.withRepository) {
+        files.push(
+          {
+            rel: `app/Repositories/${ctx.className}RepositoryInterface.php`,
+            content: renderRepositoryInterfaceTemplate(ctx),
+          },
+          {
+            rel: `app/Repositories/${ctx.className}Repository.php`,
+            content: renderRepositoryTemplate(ctx),
+          },
+        );
+      } else {
+        warnings.push(
+          "withRepository=false: no repositories were generated. The Service depends on the interface " +
+            `(${ctx.className}RepositoryInterface, contract first); use scaffold_repository to generate it.`,
+        );
+      }
+
+      files.push(
+        {
+          rel: `app/Entities/${ctx.className}.php`,
+          content: renderEntityTemplate(ctx),
+        },
+        {
+          rel: `app/Database/Migrations/${timestamp}_create_${ctx.tableName}_table.php`,
+          content: renderMigrationTemplate(ctx, timestamp),
+        },
+      );
+
+      if (parsed.withTests) {
+        if (parsed.withRepository) {
+          files.push({
+            rel: `tests/Unit/${ctx.className}ServiceTest.php`,
+            content: renderServiceTest(ctx),
+          });
+        } else {
+          warnings.push(
+            "withTests=true but withRepository=false: the Service unit test is skipped " +
+              "(it depends on the repository interface, still missing).",
+          );
+        }
+        files.push({
+          rel: `tests/Integration/${ctx.className}ControllerTest.php`,
+          content: renderControllerTest(ctx),
+        });
+      }
     }
 
     const filesCreated: string[] = [];

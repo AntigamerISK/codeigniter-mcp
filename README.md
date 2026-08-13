@@ -108,6 +108,24 @@ The server is configured through environment variables (see `mcp.json`):
 > The SDK 1.x stdio transport uses newline-delimited JSON messages
 > (no `Content-Length`); official clients handle it automatically.
 
+### Project profiles (`.codeigniter-mcp.json`)
+
+An optional file at the project root tells the tools which framework to target:
+
+```json
+{ "framework": "ci4" }
+```
+
+| Profile | Behavior |
+|---|---|
+| `spec` (default) | The built-in CodeIgniter-style contract: Controller + Service + Repository + Entity + PDO + `bin/migrate` + camelCase. |
+| `ci4` | **CodeIgniter 4 native**: `BaseController` + Model (Query Builder) + forge migrations + views; migrations run with `php spark migrate`; snake_case allowed; `strict_types` not required. |
+
+Optional overrides: `methodCase` (`"camelCase"` | `"snake_case"`) and
+`requireStrictTypes` (boolean). With `ci4`, `scaffold_full_resource` generates
+Controller + Model + Migration + View, `scaffold_service` generates the Model,
+and `scaffold_repository` is a no-op (CI4 uses Models).
+
 ---
 
 ## Usage in MCP clients

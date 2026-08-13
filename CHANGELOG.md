@@ -7,11 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-13
+
 ### Added
 
+- **Project profiles** via an optional `.codeigniter-mcp.json` at APP_ROOT:
+  - `framework: "spec"` (default) — the built-in CodeIgniter-style contract.
+  - `framework: "ci4"` — **CodeIgniter 4 native** generation: `BaseController`
+    + Model (Query Builder) + forge migrations + views; `php spark migrate`;
+    snake_case allowed; `strict_types` not required.
+- Optional `methodCase` and `requireStrictTypes` overrides in the file.
+- `ci4` profile adapts the tools: `scaffold_full_resource` (Controller, Model,
+  Migration, View), `scaffold_service` → Model, `scaffold_repository` → no-op,
+  `lint` rules per profile, `run_migration` → `php spark migrate`.
 - `npm run verify` — end-to-end acceptance checklist (`scripts/verify-mcp.mjs`)
   that tests the server against a throwaway framework and reports ✅/❌ per
   criterion.
+- 16 new tests covering the conventions loader, ci4 templates, lint and
+  scaffold (130 tests total).
 
 ### Changed
 

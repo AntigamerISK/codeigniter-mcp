@@ -9,11 +9,12 @@
  * - `ToolDeps` construction (dependency injection for every tool).
  */
 
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 import { ValidationError } from "./errors.js";
 import { PhpMigrationExecutor } from "./php-migration-executor.js";
 import { RateLimiter } from "./rate-limiter.js";
+import { ProjectConventionsFileSchema } from "../schemas/conventions.schema.js";
 
 /** Default limit: 20 write operations per minute per session. */
 export const DEFAULT_RATE_LIMIT_PER_MINUTE = 20;
@@ -51,8 +52,9 @@ export interface ResourceContext {
 
 /**
  * Contract of the framework's native migration runner.
- * The default implementation (`PhpMigrationExecutor`) invokes
- * `php bin/migrate <direction> [migrationName]` inside APP_ROOT.
+ * The default implementation (`PhpMigrationExecutor`) invokes the runner
+ * configured by the project profile (spec: `php bin/migrate`,
+ * ci4: `php spark migrate`) inside APP_ROOT.
  */
 export interface MigrationExecutor {
   execute(
@@ -69,6 +71,97 @@ export interface ToolDeps {
   rateLimitPerMinute: number;
   rateLimiter: RateLimiter;
   migrationExecutor: MigrationExecutor;
+  conventions: ProjectConventions;
+}
+
+/* ------------------------------------------------------------------ */
+/* Project conventions (`.codeigniter-mcp.json`)                       */
+/* ------------------------------------------------------------------ */
+
+export type FrameworkProfile = "spec" | "ci4";
+
+export interface MigrationCommands {
+  /** Full argv (e.g. ["php", "bin/migrate", "up"]). */
+  up: string[];
+  /** Full argv (e.g. ["php", "bin/migrate", "down"]). */
+  down: string[];
+  /** Whether an optional migrationName is appended as a final argument. */
+  appendName: boolean;
+}
+
+export interface ProjectConventions {
+  framework: FrameworkProfile;
+  methodCase: "camelCase" | "snake_case";
+  requireStrictTypes: boolean;
+  /** Suffix appended to the class/file name of a controller. "" for CI4. */
+  controllerSuffix: string;
+  migration: MigrationCommands;
+}
+
+/** Name of the optional per-project conventions file at APP_ROOT. */
+export const PROJECT_CONVENTIONS_FILE = ".codeigniter-mcp.json";
+
+/** Built-in contract (default): the spec's CodeIgniter-style framework. */
+export const SPEC_CONVENTIONS: ProjectConventions = {
+  framework: "spec",
+  methodCase: "camelCase",
+  requireStrictTypes: true,
+  controllerSuffix: "Controller",
+  migration: {
+    up: ["php", "bin/migrate", "up"],
+    down: ["php", "bin/migrate", "down"],
+    appendName: true,
+  },
+};
+
+/** CodeIgniter 4 native profile. */
+const CI4_CONVENTIONS: ProjectConventions = {
+  framework: "ci4",
+  methodCase: "snake_case",
+  requireStrictTypes: false,
+  controllerSuffix: "",
+  migration: {
+    up: ["php", "spark", "migrate"],
+    down: ["php", "spark", "migrate:rollback"],
+    appendName: false,
+  },
+};
+
+/**
+ * Reads `.codeigniter-mcp.json` from APP_ROOT (if present) and merges it with
+ * the profile defaults. A missing file means the default "spec" profile.
+ * Invalid content throws `ValidationError` so the server starts loudly.
+ */
+export function loadProjectConventions(appRoot: string): ProjectConventions {
+  const file = resolve(appRoot, PROJECT_CONVENTIONS_FILE);
+  if (!existsSync(file)) {
+    return SPEC_CONVENTIONS;
+  }
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    throw new ValidationError(
+      `${PROJECT_CONVENTIONS_FILE} is not valid JSON at APP_ROOT.`,
+    );
+  }
+
+  const parsed = ProjectConventionsFileSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new ValidationError(
+      `${PROJECT_CONVENTIONS_FILE} is invalid: ${parsed.error.issues[0]?.message}`,
+    );
+  }
+
+  const base =
+    parsed.data.framework === "ci4" ? CI4_CONVENTIONS : SPEC_CONVENTIONS;
+  return {
+    ...base,
+    methodCase: parsed.data.methodCase ?? base.methodCase,
+    requireStrictTypes:
+      parsed.data.requireStrictTypes ?? base.requireStrictTypes,
+  };
 }
 
 /** Field type → PHP type mapping. */
@@ -145,6 +238,12 @@ export function migrationTimestamp(date: Date): string {
   return `${date.getFullYear()}_${pad2(date.getMonth() + 1)}_${pad2(date.getDate())}`;
 }
 
+/** `2026-08-12T10:30:05Z` → `2026-08-12-103005` (CI4 migration suffix, UTC = deterministic). */
+export function ci4MigrationTimestamp(date: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${date.getUTCFullYear()}-${p(date.getUTCMonth() + 1)}-${p(date.getUTCDate())}-${p(date.getUTCHours())}${p(date.getUTCMinutes())}${p(date.getUTCSeconds())}`;
+}
+
 /** Resolves fields with their PHP/column types already mapped. */
 export function resolveFields(fields: FieldInput[]): FieldDef[] {
   return fields.map((field) => {
@@ -215,6 +314,7 @@ export interface CreateToolDepsOptions {
   now?: () => Date;
   rateLimitPerMinute?: number;
   migrationExecutor?: MigrationExecutor;
+  conventions?: ProjectConventions;
   env?: Record<string, string | undefined>;
 }
 
@@ -242,12 +342,16 @@ export function createToolDeps(options: CreateToolDepsOptions = {}): ToolDeps {
     );
   }
 
+  const conventions = options.conventions ?? loadProjectConventions(appRoot);
+
   return {
     appRoot,
     now: options.now ?? (() => new Date()),
     rateLimitPerMinute,
     rateLimiter: new RateLimiter(rateLimitPerMinute),
-    migrationExecutor: options.migrationExecutor ?? new PhpMigrationExecutor(),
+    migrationExecutor:
+      options.migrationExecutor ?? new PhpMigrationExecutor(conventions.migration),
+    conventions,
   };
 }
 

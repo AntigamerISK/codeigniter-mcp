@@ -1,13 +1,13 @@
 /**
  * Default `MigrationExecutor` implementation.
  *
- * Invokes the framework's native migration runner:
- *   `php bin/migrate <direction> [migrationName]` (cwd = APP_ROOT)
+ * Invokes the framework's native migration runner (cwd = APP_ROOT):
+ *   - spec profile: `php bin/migrate up|down [name.php]`
+ *   - ci4 profile:  `php spark migrate` / `php spark migrate:rollback`
  *
  * Framework contract:
- * - `bin/migrate` must exist at the APP_ROOT root and be an executable PHP
- *   script (`php bin/migrate up|down [name.php]`).
- * - Prints one line per executed migration to stdout (relative paths).
+ * - The runner must print one line per executed migration to stdout
+ *   (relative paths for spec; best-effort output lines for other profiles).
  * - Exit code 0 = success; anything else = error.
  *
  * Security:
@@ -17,9 +17,8 @@
  */
 
 import { spawn } from "node:child_process";
-import { MigrationExecutor } from "./config.js";
+import { MigrationCommands, MigrationExecutor } from "./config.js";
 
-const MIGRATE_SCRIPT = "bin/migrate";
 const DEFAULT_TIMEOUT_MS = 60_000;
 
 interface ProcessResult {
@@ -93,19 +92,29 @@ function executorErrorMessage(err: NodeJS.ErrnoException): string {
 }
 
 export class PhpMigrationExecutor implements MigrationExecutor {
-  constructor(private readonly timeoutMs: number = DEFAULT_TIMEOUT_MS) {}
+  constructor(
+    private readonly commands: MigrationCommands = {
+      up: ["php", "bin/migrate", "up"],
+      down: ["php", "bin/migrate", "down"],
+      appendName: true,
+    },
+    private readonly timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  ) {}
 
   async execute(
     direction: "up" | "down",
     migrationName: string | null,
     appRoot: string,
   ): Promise<{ executed: string[] }> {
-    const args = [MIGRATE_SCRIPT, direction];
-    if (migrationName !== null) {
-      args.push(migrationName);
-    }
+    const base = direction === "up" ? this.commands.up : this.commands.down;
+    const args =
+      this.commands.appendName && migrationName !== null
+        ? [...base, migrationName]
+        : [...base];
+    const command = args[0]!;
+    const rest = args.slice(1);
 
-    const result = await runProcess("php", args, appRoot, this.timeoutMs);
+    const result = await runProcess(command, rest, appRoot, this.timeoutMs);
 
     if (result.code !== 0) {
       const detail = result.stderr.trim().split(/\r?\n/).at(-1) ?? "";

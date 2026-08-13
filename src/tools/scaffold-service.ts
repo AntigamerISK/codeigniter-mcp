@@ -18,6 +18,7 @@ import {
 import { handleToolCall, type ToolResult } from "../core/errors.js";
 import { safeWriteFile } from "../core/fs-safe.js";
 import { ScaffoldServiceInput } from "../schemas/scaffold-service.schema.js";
+import { renderCi4Model } from "../templates/ci4.template.js";
 import { renderServiceTemplate } from "../templates/service.template.js";
 
 export interface ScaffoldServicePayload {
@@ -33,30 +34,44 @@ export async function scaffoldService(
   return handleToolCall(async () => {
     const parsed = ScaffoldServiceInput.parse(input);
     const ctx = buildResourceContext(parsed.resourceName, []);
-    const { content, warnings } = renderServiceTemplate(ctx);
+    const warnings: string[] = [];
 
-    const interfaceRel = `app/Repositories/${ctx.className}RepositoryInterface.php`;
-    if (parsed.withRepository) {
-      const interfaceAbs = resolveInAppRoot(deps.appRoot, interfaceRel);
-      if (!existsSync(interfaceAbs)) {
+    let rel: string;
+    let content: string;
+
+    if (deps.conventions.framework === "ci4") {
+      // In CI4 the "service" layer is the Model: data + business logic.
+      rel = `app/Models/${ctx.className}Model.php`;
+      content = renderCi4Model(ctx);
+      if (parsed.withRepository) {
         warnings.push(
-          `${interfaceRel} does not exist; the Service is generated anyway injecting the interface (contract first). ` +
-            "Generate the interface with scaffold_repository.",
+          "withRepository is ignored in the ci4 profile: data access lives in the Model.",
         );
       }
     } else {
-      warnings.push(
-        "withRepository=false: the Service depends on the repository interface (contract first). " +
-          "Generate the repositories with scaffold_repository to enable persistence.",
-      );
+      rel = `app/Services/${ctx.className}Service.php`;
+      const rendered = renderServiceTemplate(ctx);
+      content = rendered.content;
+      warnings.push(...rendered.warnings);
+
+      const interfaceRel = `app/Repositories/${ctx.className}RepositoryInterface.php`;
+      if (parsed.withRepository) {
+        const interfaceAbs = resolveInAppRoot(deps.appRoot, interfaceRel);
+        if (!existsSync(interfaceAbs)) {
+          warnings.push(
+            `${interfaceRel} does not exist; the Service is generated anyway injecting the interface (contract first). ` +
+              "Generate the interface with scaffold_repository.",
+          );
+        }
+      } else {
+        warnings.push(
+          "withRepository=false: the Service depends on the repository interface (contract first). " +
+            "Generate the repositories with scaffold_repository to enable persistence.",
+        );
+      }
     }
 
-    const absPath = resolveInAppRoot(
-      deps.appRoot,
-      "app",
-      "Services",
-      `${ctx.className}Service.php`,
-    );
+    const absPath = resolveInAppRoot(deps.appRoot, ...rel.split("/"));
     const result = safeWriteFile(absPath, content, parsed.overwrite);
     const relative = toRelativePath(deps.appRoot, absPath);
 

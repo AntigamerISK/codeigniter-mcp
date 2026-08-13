@@ -33,6 +33,19 @@ export async function scaffoldRepository(
 ): Promise<ToolResult<ScaffoldRepositoryPayload>> {
   return handleToolCall(async () => {
     const parsed = ScaffoldRepositoryInput.parse(input);
+
+    // The Repository layer is specific to the spec profile. CI4 handles data
+    // access through Models, so this tool is a no-op there.
+    if (deps.conventions.framework === "ci4") {
+      return {
+        filesCreated: [],
+        warnings: [
+          "scaffold_repository is not applicable in the ci4 profile: CI4 handles data access " +
+            "through Models. Use scaffold_service (generates the Model) or scaffold_full_resource.",
+        ],
+      };
+    }
+
     const ctx = buildResourceContext(parsed.resourceName, parsed.fields);
 
     // Heavy write tool → consume a rate limiter token.

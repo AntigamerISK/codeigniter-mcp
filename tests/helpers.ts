@@ -9,6 +9,7 @@ import { join } from "node:path";
 import {
   createToolDeps,
   type MigrationExecutor,
+  type ProjectConventions,
   type ToolDeps,
 } from "../src/core/config.js";
 
@@ -60,6 +61,7 @@ export interface CreateContextOptions {
   now?: () => Date;
   rateLimitPerMinute?: number;
   executor?: MigrationExecutor;
+  conventions?: ProjectConventions;
 }
 
 /** Creates a temp APP_ROOT + isolated ToolDeps. */
@@ -74,6 +76,7 @@ export function createTestContext(options: CreateContextOptions = {}): TestConte
     now: options.now ?? (() => FIXED_DATE),
     rateLimitPerMinute: options.rateLimitPerMinute ?? 100,
     migrationExecutor: executor,
+    conventions: options.conventions,
   });
 
   return {

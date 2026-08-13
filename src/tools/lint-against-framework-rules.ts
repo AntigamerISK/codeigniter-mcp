@@ -17,6 +17,8 @@ import { existsSync } from "node:fs";
 import { dirname, basename } from "node:path";
 import {
   resolveInAppRoot,
+  SPEC_CONVENTIONS,
+  type ProjectConventions,
   type ToolDeps,
 } from "../core/config.js";
 import { handleToolCall, ValidationError, type ToolResult } from "../core/errors.js";
@@ -197,6 +199,7 @@ export function analyzePhpFile(
   content: string,
   relPath: string,
   appRoot: string,
+  conventions: ProjectConventions = SPEC_CONVENTIONS,
 ): LintViolation[] {
   const violations: LintViolation[] = [];
   const baseName = basename(relPath).replace(/\.php$/, "");
@@ -204,8 +207,8 @@ export function analyzePhpFile(
   const head = content.split("\n").slice(0, 10).join("\n");
   const clean = stripPhpComments(content);
 
-  /* 1. missing-strict-types (error) */
-  if (!/declare\s*\(\s*strict_types\s*=\s*1\s*\)\s*;/.test(head)) {
+  /* 1. missing-strict-types (error; not required by the ci4 profile) */
+  if (conventions.requireStrictTypes && !/declare\s*\(\s*strict_types\s*=\s*1\s*\)\s*;/.test(head)) {
     violations.push({
       rule: "missing-strict-types",
       line: 1,
@@ -242,11 +245,15 @@ export function analyzePhpFile(
         severity: "error",
       });
     }
-    if (kind === "controller" && !declared.endsWith("Controller")) {
+    if (
+      conventions.controllerSuffix !== "" &&
+      kind === "controller" &&
+      !declared.endsWith(conventions.controllerSuffix)
+    ) {
       violations.push({
         rule: "naming-convention",
         line: classLine,
-        message: `A controller must end in 'Controller' (found: ${declared}).`,
+        message: `A controller must end in '${conventions.controllerSuffix}' (found: ${declared}).`,
         severity: "error",
       });
     }
@@ -275,20 +282,26 @@ export function analyzePhpFile(
       });
     }
 
-    /* Methods in camelCase (magic `__*` are skipped). */
+    /* Methods in the profile's case (camelCase by default, snake_case for CI4). */
+    const methodNamePattern =
+      conventions.methodCase === "snake_case"
+        ? /^[a-z][a-z0-9_]*$/
+        : /^[a-z][a-zA-Z0-9]*$/;
+    const methodCaseLabel =
+      conventions.methodCase === "snake_case" ? "snake_case" : "camelCase";
     const methodPattern = /\bfunction\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
     let methodMatch: RegExpExecArray | null;
     while ((methodMatch = methodPattern.exec(content)) !== null) {
       const name = methodMatch[1]!;
       if (name.startsWith("__")) continue;
-      if (!/^[a-z][a-zA-Z0-9]*$/.test(name)) {
+      if (!methodNamePattern.test(name)) {
         violations.push({
           rule: "naming-convention",
           line: lineOf(
             content,
             new RegExp(`function\\s+${escapeRegExp(name)}\\s*\\(`),
           ),
-          message: `The method '${name}' is not camelCase.`,
+          message: `The method '${name}' is not ${methodCaseLabel}.`,
           severity: "error",
         });
       }
@@ -304,7 +317,7 @@ export function analyzePhpFile(
     });
   }
 
-  /* 3. no-query-in-controller (error, controllers only) */
+  /* 3. no-query-in-controller (controllers only; warning in ci4, error in spec) */
   if (kind === "controller") {
     const sqlLine = lineOf(clean, SQL_CONSTRUCT_PATTERN);
     const dbLine = lineOf(clean, DB_ACCESS_PATTERN);
@@ -314,7 +327,7 @@ export function analyzePhpFile(
         line: sqlLine ?? dbLine,
         message:
           "The controller accesses data (SQL or database). All queries must live in the Repository and the logic in the Service.",
-        severity: "error",
+        severity: conventions.framework === "ci4" ? "warning" : "error",
       });
     }
   }
@@ -333,8 +346,8 @@ export function analyzePhpFile(
     }
   }
 
-  /* 5. repository-without-interface (error, implementations only) */
-  if (kind === "repository") {
+  /* 5. repository-without-interface (error, implementations only; not in ci4) */
+  if (kind === "repository" && conventions.framework !== "ci4") {
     const interfaceAbs = resolveInAppRoot(
       appRoot,
       dirname(relPath),
@@ -373,6 +386,7 @@ export async function lintAgainstFrameworkRules(
       content,
       parsed.filePath.replace(/\\/g, "/"),
       deps.appRoot,
+      deps.conventions,
     );
     const compliant = !violations.some((violation) => violation.severity === "error");
 
