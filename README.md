@@ -1,5 +1,11 @@
 # codeigniter-mcp
 
+![License: MIT](https://img.shields.io/github/license/AntigamerISK/codeigniter-mcp)
+![CI](https://img.shields.io/github/actions/workflow/status/AntigamerISK/codeigniter-mcp/ci.yml?branch=main)
+![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+![Tests](https://img.shields.io/badge/tests-114%2F114-brightgreen)
+![SemVer](https://img.shields.io/badge/semver-2.0.0-blue)
+
 **MCP (Model Context Protocol)** server that accelerates the development of a
 PHP framework inspired by CodeIgniter: **MVC + optional Services/Repository
 layer** (lightweight Ports/Adapters). Its goal is **extreme development speed
@@ -28,6 +34,8 @@ code without friction** and without structure hallucinations.
 10. [Local development](#local-development)
 11. [End-to-end example](#end-to-end-example)
 12. [FAQ](#faq)
+13. [Contributing](#contributing)
+14. [License](#license)
 
 ---
 
@@ -349,3 +357,16 @@ server configuration.
 
 **Do errors expose system paths?** Never. Unexpected errors always return a
 generic actionable message.
+
+---
+
+## Contributing
+
+Contributions are welcome! Read [CONTRIBUTING.md](CONTRIBUTING.md) to set up the
+development environment, run the tests and open a pull request. Security issues
+should be reported privately — see [SECURITY.md](SECURITY.md). Release history is
+tracked in [CHANGELOG.md](CHANGELOG.md).
+
+## License
+
+[MIT](LICENSE) © 2026 AntigamerISK
