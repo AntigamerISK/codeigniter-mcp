@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-08-13
+
+### Changed
+
+- **Docs restructured**: README is now a scannable landing page (quickstart,
+  config, tools/prompts/resources tables) and the deep content moved to
+  `docs/` (tools, profiles, security, testing). `docs/` is shipped in the npm
+  tarball.
+
 ## [0.4.0] - 2026-08-13
 
 ### Added
