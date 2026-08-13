@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Security tooling: Dependabot, CodeQL and `npm audit --audit-level=high` in CI.
+
 ## [0.1.2] - 2026-08-13
 
 ### Fixed
