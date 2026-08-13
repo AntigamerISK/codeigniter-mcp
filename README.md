@@ -1,5 +1,7 @@
 # codeigniter-mcp
 
+![npm](https://img.shields.io/npm/v/codeigniter-mcp)
+![npm downloads](https://img.shields.io/npm/dm/codeigniter-mcp)
 ![License: MIT](https://img.shields.io/github/license/AntigamerISK/codeigniter-mcp)
 ![CI](https://img.shields.io/github/actions/workflow/status/AntigamerISK/codeigniter-mcp/ci.yml?branch=main)
 ![Node](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen)
@@ -14,6 +16,9 @@ without sacrificing security**.
 The server exposes 7 tools and 4 resources that allow an LLM (Claude Code,
 Cursor, VS Code, etc.) to **generate, validate and maintain idiomatic framework
 code without friction** and without structure hallucinations.
+
+Published on [npm](https://www.npmjs.com/package/codeigniter-mcp) — run it with
+`npx codeigniter-mcp`, no build required.
 
 > Version: `0.1.2` — Semantic versioning: any input/output schema change breaks
 > compatibility and must be versioned explicitly.
@@ -52,6 +57,15 @@ code without friction** and without structure hallucinations.
 
 ## Installation
 
+**Quick start** (published package — no build needed):
+
+```bash
+npx -y codeigniter-mcp          # run directly over stdio
+npm install -g codeigniter-mcp  # or install globally
+```
+
+**From source** (for contributors):
+
 ```bash
 npm install
 npm run build   # compiles TypeScript → dist/
@@ -77,8 +91,8 @@ The server is configured through environment variables (see `mcp.json`):
 {
   "mcpServers": {
     "codeigniter-mcp": {
-      "command": "node",
-      "args": ["dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "codeigniter-mcp"],
       "env": {
         "APP_ROOT": "/path/to/mi-framework",
         "RATE_LIMIT_PER_MINUTE": "20"
@@ -88,7 +102,9 @@ The server is configured through environment variables (see `mcp.json`):
 }
 ```
 
-> On Windows use `command`: `"node"` with `args: ["dist/index.js"]` as well.
+> Uses the published package — no build required; `npx` downloads it on first
+> run. Contributors can point the server at a local build instead:
+> `"command": "node"` with `"args": ["dist/index.js"]`.
 > The SDK 1.x stdio transport uses newline-delimited JSON messages
 > (no `Content-Length`); official clients handle it automatically.
 
@@ -97,7 +113,8 @@ The server is configured through environment variables (see `mcp.json`):
 ## Usage in MCP clients
 
 **Claude Code**: add the `codeigniter-mcp` block above to your user or project
-`mcp.json`, restart the session, and ask something like:
+`mcp.json` (`npx` downloads the package automatically on first run), restart the
+session, and ask something like:
 
 > Generate the full CRUD of the `Product` resource with fields `title` (string,
 > required, max:255), `price` (float) and `description` (text, optional).
@@ -107,7 +124,9 @@ The server is configured through environment variables (see `mcp.json`):
 **Remote deployment** (Streamable HTTP):
 
 ```bash
-MCP_TRANSPORT=http MCP_PORT=3000 APP_ROOT=/path/to/mi-framework node dist/index.js
+MCP_TRANSPORT=http MCP_PORT=3000 APP_ROOT=/path/to/mi-framework npx -y codeigniter-mcp
+# or, from a local build:
+# MCP_TRANSPORT=http MCP_PORT=3000 APP_ROOT=/path/to/mi-framework node dist/index.js
 ```
 
 Clients connect to `http://localhost:3000/`.
