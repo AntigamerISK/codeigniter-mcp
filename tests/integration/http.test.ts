@@ -39,7 +39,7 @@ function parseMcpResponse(response: HttpResponse): unknown {
       .map((line) => line.slice("data:".length).trim());
     const last = dataLines[dataLines.length - 1];
     if (last === undefined) {
-      throw new Error("Respuesta SSE sin frame data:");
+      throw new Error("SSE response without a data frame:");
     }
     return JSON.parse(last) as unknown;
   }

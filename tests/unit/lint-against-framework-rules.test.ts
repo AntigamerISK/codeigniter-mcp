@@ -30,7 +30,7 @@ final class ProductController
 `;
 
 describe("analyzePhpFile", () => {
-  it("controller limpio es compliant (sin violaciones de error)", () => {
+  it("clean controller is compliant (no error violations)", () => {
     const violations = analyzePhpFile(
       STRICT_HEADER,
       "app/Controllers/ProductController.php",
@@ -39,7 +39,7 @@ describe("analyzePhpFile", () => {
     expect(violations.filter((v) => v.severity === "error")).toEqual([]);
   });
 
-  it("missing-strict-types: error si falta declare", () => {
+  it("missing-strict-types: error when declare is missing", () => {
     const content = "<?php\n\nnamespace App\\Controllers;\n\nclass ProductController {}\n";
     const violations = analyzePhpFile(
       content,
@@ -63,7 +63,7 @@ describe("analyzePhpFile", () => {
     );
   });
 
-  it("no-query-in-controller: no marca docblocks ni strings", () => {
+  it("no-query-in-controller: does not flag docblocks or strings", () => {
     const content = `<?php
 
 declare(strict_types=1);
@@ -101,7 +101,7 @@ final class ProductController
     ).toEqual([]);
   });
 
-  it("no-query-in-controller: heredoc con texto tipo-SQL no es falso positivo", () => {
+  it("no-query-in-controller: heredoc with SQL-like text is not a false positive", () => {
     const content = `<?php
 
 declare(strict_types=1);
@@ -256,7 +256,7 @@ final class ProductRepository
     );
   });
 
-  it("repository con su interfaz presente es compliant", async () => {
+  it("repository with its interface present is compliant", async () => {
     const { root, deps, cleanup } = createTestContext();
     try {
       writeInAppRoot(
@@ -330,7 +330,7 @@ describe("lint_against_framework_rules (tool)", () => {
     }
   });
 
-  it("archivo inexistente → ValidationError", async () => {
+  it("missing file → ValidationError", async () => {
     const { deps, cleanup } = createTestContext();
     try {
       const result = await lintAgainstFrameworkRules(

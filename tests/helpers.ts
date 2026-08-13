@@ -96,7 +96,7 @@ export function writeInAppRoot(
   relativePath: string,
   content: string,
 ): string {
-  const absPath = join(root, relativePath.split("/").join("\\"));
+  const absPath = join(root, ...relativePath.split("/"));
   mkdirSync(join(absPath, ".."), { recursive: true });
   writeFileSync(absPath, content, "utf8");
   return absPath;
@@ -104,7 +104,7 @@ export function writeInAppRoot(
 
 /** Creates a directory inside APP_ROOT. */
 export function mkdirInAppRoot(root: string, relativePath: string): string {
-  const absPath = join(root, relativePath.split("/").join("\\"));
+  const absPath = join(root, ...relativePath.split("/"));
   mkdirSync(absPath, { recursive: true });
   return absPath;
 }

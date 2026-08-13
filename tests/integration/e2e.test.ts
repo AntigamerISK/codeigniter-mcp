@@ -177,7 +177,7 @@ describe("e2e: real server over stdio", () => {
     expect(migration).toMatch(/^app\/Database\/Migrations\/\d{4}_\d{2}_\d{2}_create_products_table\.php$/);
   });
 
-  it.skipIf(!php)("los 8 archivos PHP generados pasan `php -l`", () => {
+  it.skipIf(!php)("the 8 generated PHP files pass `php -l`", () => {
     for (const rel of [
       "app/Controllers/ProductController.php",
       "app/Services/ProductService.php",
