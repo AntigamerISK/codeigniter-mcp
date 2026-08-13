@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Require Node `>= 20.12` (CI matrix: Node 20/22/24; Node 18 is EOL and its
+  runtime lacks `util.styleText` used by the test toolchain).
+- Test helpers are now cross-platform (path separators via `path.join`), fixing
+  the test suite on Linux CI.
+
 ## [0.1.0] - 2026-08-13
 
 ### Added

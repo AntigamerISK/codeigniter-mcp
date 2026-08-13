@@ -2,7 +2,7 @@
 
 ![License: MIT](https://img.shields.io/github/license/AntigamerISK/codeigniter-mcp)
 ![CI](https://img.shields.io/github/actions/workflow/status/AntigamerISK/codeigniter-mcp/ci.yml?branch=main)
-![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+![Node](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-114%2F114-brightgreen)
 ![SemVer](https://img.shields.io/badge/semver-2.0.0-blue)
 
@@ -43,7 +43,7 @@ code without friction** and without structure hallucinations.
 
 | Dependency | Version | Notes |
 |---|---|---|
-| Node.js | >= 18 | MCP server runtime (tested on Node 24) |
+| Node.js | >= 20.12 | MCP server runtime + tooling (tested on Node 24) |
 | npm | >= 9 | Package manager |
 | PHP | 8.2+ | Only to **run** the generated code (not to run the MCP server) |
 | Composer / PHPUnit | — | For the generated PHP tests |
