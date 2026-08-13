@@ -17,6 +17,11 @@ The server exposes 7 tools and 4 resources that allow an LLM (Claude Code,
 Cursor, VS Code, etc.) to **generate, validate and maintain idiomatic framework
 code without friction** and without structure hallucinations.
 
+It targets **CodeIgniter 4 natively** — auto-detected from the project
+structure (no config needed) — plus the built-in `spec` contract
+(CodeIgniter-style MVC + Services/Repository). See
+[Project profiles](#project-profiles-codeigniter-mcpjson).
+
 Published on [npm](https://www.npmjs.com/package/codeigniter-mcp) — run it with
 `npx codeigniter-mcp`, no build required.
 
@@ -39,8 +44,9 @@ Published on [npm](https://www.npmjs.com/package/codeigniter-mcp) — run it wit
 10. [Local development](#local-development)
 11. [End-to-end example](#end-to-end-example)
 12. [FAQ](#faq)
-13. [Contributing](#contributing)
-14. [License](#license)
+13. [Roadmap](#roadmap)
+14. [Contributing](#contributing)
+15. [License](#license)
 
 ---
 
@@ -247,8 +253,9 @@ Output: `valid`, `conflicts[]`, `suggestions[]`. Never modifies `Routes.php`.
 
 ### 6. `run_migration` — DESTRUCTIVE
 
-Runs migrations through the framework's native runner:
-`php bin/migrate <direction> [migrationName]`.
+Runs migrations through the framework's native runner, per profile:
+`spec` → `php bin/migrate up|down [migrationName]`; `ci4` →
+`php spark migrate` (`migrate:rollback` for `down`).
 
 Input: `{ direction: "up|down", migrationName?, confirm: boolean }`.
 
@@ -271,6 +278,10 @@ Validates a PHP file against the conventions. `compliant=false` if at least one
 | `repository-without-interface` | Repositories | error |
 | (layer file without class) | Controllers/Services/Repositories/Entities | warning |
 
+Rules adapt to the profile: in `ci4` `missing-strict-types` and the
+`Controller` suffix are **not** required, method names are snake_case, and SQL
+in a controller is a `warning` instead of an `error`.
+
 ---
 
 ## Resources
@@ -288,6 +299,11 @@ model generates idiomatic code without hallucinating structure. URIs:
 ---
 
 ## Generated PHP framework contract
+
+The contract below applies to the **`spec` profile** (default). With the `ci4`
+profile the generated code is native CodeIgniter 4 — `BaseController`, Model
+(Query Builder), forge migrations, views — see
+[Project profiles](#project-profiles-codeigniter-mcpjson).
 
 The generated code assumes a minimal framework with:
 
@@ -433,6 +449,16 @@ server configuration.
 
 **Do errors expose system paths?** Never. Unexpected errors always return a
 generic actionable message.
+
+---
+
+## Roadmap
+
+- **`ci3` profile** — CodeIgniter 3 (legacy) support behind the same
+  `.codeigniter-mcp.json` / auto-detection mechanism (CI3 is still active on a
+  large legacy base but is EOL: no security patches).
+- **Recipe prompts** — high-level feature templates (auth, file uploads,
+  REST CRUD) that chain the existing tools.
 
 ---
 
