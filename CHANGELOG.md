@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-13
+
+### Added
+
+- **Interpreted migration runner errors**: `run_migration` now detects known
+  PHP/CI4 failure patterns (`Parse error` incl. anonymous classes, missing
+  classes, `SQLSTATE`, undefined functions) and returns a new
+  `MigrationFailedError` with an actionable message and sanitized detail
+  (absolute paths replaced with `<path>`) instead of a raw stack trace.
+- **`ci4` Service layer**: `scaffold_service` now generates a real CI4 Service
+  (`app/Services/{X}Service.php`) that injects the Model; `withRepository=true`
+  also generates the Model. `scaffold_full_resource` in `ci4` includes the
+  Service when `withRepository=true` (Controller + Model + Service + Migration +
+  View). `scaffold_repository` remains a no-op (CI4 data access lives in
+  Models) with an updated message.
+- `run_migration` output only counts lines that reference an actual migration
+  file (spark table headers are no longer reported as executed).
+- `npm run verify` acceptance checklist: new criterion covering interpreted
+  runner failures (13 criteria, was 12).
+- 13 new tests (migration error interpreter + ci4 Service), 154 tests total.
+
 ## [0.4.1] - 2026-08-13
 
 ### Changed

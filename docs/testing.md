@@ -3,7 +3,7 @@
 ## Tests
 
 ```bash
-npm test               # 141 tests: unit + integration + e2e
+npm test               # 154 tests: unit + integration + e2e
 npm run test:watch     # watch mode
 npm run typecheck      # tsc --noEmit over src + tests
 ```
@@ -61,8 +61,8 @@ node scripts/verify-mcp.mjs
 
 It reports ✅/❌ per criterion: handshake, 7 tools, 4 resources, 3 prompts, full
 CRUD scaffold (8 files), `php -l`, lint compliance, route validation,
-destructive-op guard, migration execution and path-traversal protection. Exit
-code `0` means everything passed.
+destructive-op guard, migration execution, path-traversal protection and
+runner-failure interpretation. Exit code `0` means everything passed.
 
 ## Remote deployment (Streamable HTTP)
 

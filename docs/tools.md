@@ -68,7 +68,9 @@ controller extends `BaseController` and delegates to the Model.
 Generates only the Service (business logic + validation). Rule: if the
 repository interface does not exist, it reports it in `warnings` but still
 generates the Service injecting the interface (**contract first, implementation
-later**). In the `ci4` profile the tool generates the Model instead.
+later**). In the `ci4` profile it generates a real Service
+(`app/Services/{X}Service.php`) that injects the Model; `withRepository=true`
+also generates the Model (reported in `additionalFilesCreated`).
 
 ## 4. `scaffold_repository`
 
@@ -100,6 +102,13 @@ Input: `{ direction: "up|down", migrationName?, confirm: boolean }`.
 `DestructiveOpBlockedError` **without touching the database or executing
 anything** (tested: zero executions). Rate limited. `migrationName` is validated
 with a regex (only `[a-z0-9_]`, optional `.php`) to prevent path traversal.
+
+**On failure** the output is a `MigrationFailedError` with an actionable
+message and sanitized `detail`: known patterns (`Parse error` incl. anonymous
+classes, missing classes, `SQLSTATE`, undefined functions) are detected and
+interpreted; absolute paths are replaced with `<path>`. No raw stack trace is
+exposed. Only lines referencing an actual migration file are counted in
+`executed` (spark table headers are ignored).
 
 ## 7. `lint_against_framework_rules`
 

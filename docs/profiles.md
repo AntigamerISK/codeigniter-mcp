@@ -20,8 +20,10 @@ An optional file at the project root tells the tools which framework to target:
 
 Optional overrides: `methodCase` (`"camelCase"` | `"snake_case"`) and
 `requireStrictTypes` (boolean). With `ci4`, `scaffold_full_resource` generates
-Controller + Model + Migration + View, `scaffold_service` generates the Model,
-and `scaffold_repository` is a no-op (CI4 uses Models).
+Controller + Model + Service + Migration + View (`withRepository=true` adds the
+Service), `scaffold_service` generates the Service (+ the Model with
+`withRepository=true`), and `scaffold_repository` is a no-op (CI4 data access
+lives in Models, business logic in Services).
 
 ## Auto-detection
 

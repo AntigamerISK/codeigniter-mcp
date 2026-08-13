@@ -42,10 +42,27 @@ export class RateLimitExceededError extends Error {
   }
 }
 
+/**
+ * The framework's migration runner failed.
+ * `message` is an actionable interpretation (never a raw stack trace);
+ * `detail` carries the first relevant lines, sanitized (no absolute paths).
+ */
+export class MigrationFailedError extends Error {
+  constructor(
+    message: string,
+    readonly detail?: string,
+  ) {
+    super(message);
+    this.name = "MigrationFailedError";
+  }
+}
+
 /** Structured error that travels inside a tool output. */
 export interface ToolError {
   type: string;
   message: string;
+  /** Optional actionable detail (sanitized, e.g. runner error lines). */
+  detail?: string;
 }
 
 /** Typed tool result: success payload or structured error (never thrown). */
@@ -58,6 +75,7 @@ const KNOWN_ERROR_TYPES: Record<string, string> = {
   DestructiveOpBlockedError: "DestructiveOpBlockedError",
   ConventionViolationError: "ConventionViolationError",
   RateLimitExceededError: "RateLimitExceededError",
+  MigrationFailedError: "MigrationFailedError",
   ZodError: "ValidationError",
 };
 
@@ -70,7 +88,13 @@ const KNOWN_ERROR_TYPES: Record<string, string> = {
  */
 export function toToolError(err: unknown): ToolError {
   if (err instanceof Error && KNOWN_ERROR_TYPES[err.name]) {
-    return { type: KNOWN_ERROR_TYPES[err.name]!, message: err.message };
+    const detail =
+      err instanceof MigrationFailedError ? err.detail : undefined;
+    return {
+      type: KNOWN_ERROR_TYPES[err.name]!,
+      message: err.message,
+      ...(detail ? { detail } : {}),
+    };
   }
   return {
     type: "InternalError",

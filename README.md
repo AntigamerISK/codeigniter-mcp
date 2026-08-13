@@ -5,7 +5,7 @@
 ![License: MIT](https://img.shields.io/github/license/X-Gunner/codeigniter-mcp)
 ![CI](https://img.shields.io/github/actions/workflow/status/X-Gunner/codeigniter-mcp/ci.yml?branch=main)
 ![Node](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen)
-![Tests](https://img.shields.io/badge/tests-141%2F141-brightgreen)
+![Tests](https://img.shields.io/badge/tests-154%2F154-brightgreen)
 ![SemVer](https://img.shields.io/badge/semver-2.0.0-blue)
 
 **MCP (Model Context Protocol)** server that accelerates development of a PHP
@@ -14,7 +14,7 @@ framework inspired by CodeIgniter: **MVC + optional Services/Repository layer**
 detected from the project structure). Extreme development speed without
 sacrificing security.
 
-> Version: `0.4.1` — Semantic versioning: any input/output schema change breaks
+> Version: `0.5.0` — Semantic versioning: any input/output schema change breaks
 > compatibility and must be versioned explicitly.
 
 ## Highlights
@@ -77,10 +77,10 @@ structure (`app/Config/Paths.php` or `spark` → `ci4`; `bin/migrate` or
 |---|---|
 | `scaffold_full_resource` | Full CRUD: Controller + Service + Repository (interface+impl) + Entity + Migration + tests (8 files, ~15 ms) |
 | `scaffold_controller` | Controller only; zero SQL allowed (build-time check) |
-| `scaffold_service` | Service: business logic + validation, contract-first DI |
-| `scaffold_repository` | Repository interface + PDO implementation, always together |
+| `scaffold_service` | Service: business logic + validation, contract-first DI (ci4: Service that injects the Model) |
+| `scaffold_repository` | Repository interface + PDO implementation, always together (ci4: no-op, Models handle data) |
 | `validate_route` | Read-only route collision detection against `app/Config/Routes.php` |
-| `run_migration` | Runs the native migration runner (spec: `bin/migrate`; ci4: `spark migrate`). Requires explicit `confirm` |
+| `run_migration` | Runs the native migration runner (spec: `bin/migrate`; ci4: `spark migrate`). Requires explicit `confirm`; failures are interpreted (no raw stack traces) |
 | `lint_against_framework_rules` | Lints PHP files against the profile conventions |
 
 ## Prompts

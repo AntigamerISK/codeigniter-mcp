@@ -37,6 +37,7 @@ import {
   renderCi4Migration,
   renderCi4Model,
   renderCi4ModelTest,
+  renderCi4Service,
   renderCi4View,
 } from "../templates/ci4.template.js";
 import { renderEntityTemplate } from "../templates/entity.template.js";
@@ -235,9 +236,15 @@ export async function scaffoldFullResource(
         },
       );
       if (parsed.withRepository) {
+        // In ci4, withRepository means "include the Service" (business logic
+        // layer that injects the Model). The Model is always generated.
+        files.push({
+          rel: `app/Services/${ctx.className}Service.php`,
+          content: renderCi4Service(ctx),
+        });
+      } else {
         warnings.push(
-          "withRepository=true is ignored in the ci4 profile: CI4 handles data " +
-            "access through Models (see the generated Model).",
+          "withRepository=false: no Service was generated. Generate it with scaffold_service (with withRepository=true) if you need business logic separated from the controller.",
         );
       }
       if (parsed.withTests) {

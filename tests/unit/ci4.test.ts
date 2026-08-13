@@ -16,10 +16,12 @@ import {
   renderCi4Migration,
   renderCi4Model,
   renderCi4ModelTest,
+  renderCi4Service,
   renderCi4View,
 } from "../../src/templates/ci4.template.js";
 import { analyzePhpFile } from "../../src/tools/lint-against-framework-rules.js";
 import { scaffoldFullResource } from "../../src/tools/scaffold-full-resource.js";
+import { scaffoldService } from "../../src/tools/scaffold-service.js";
 import {
   createTestContext,
   makeTempAppRoot,
@@ -220,6 +222,17 @@ describe("ci4 templates", () => {
     expect(content).toContain("'patients', $model->table");
   });
 
+  it("service: business logic layer that injects the Model", () => {
+    const content = renderCi4Service(CTX);
+    expect(content).toContain("namespace App\\Services;");
+    expect(content).toContain("use App\\Models\\PatientModel;");
+    expect(content).toContain("class PatientService");
+    expect(content).toContain("$this->model = new PatientModel();");
+    expect(content).toContain("public function all()");
+    expect(content).toContain("return $this->model->findAll();");
+    expect(content).toContain("public function delete($id)");
+  });
+
   it("ci4MigrationTimestamp format", () => {
     expect(ci4MigrationTimestamp(new Date("2026-08-12T10:30:05.000Z"))).toBe(
       "2026-08-12-103005",
@@ -293,7 +306,7 @@ class Patient extends BaseController
 });
 
 describe("scaffold_full_resource with the ci4 profile", () => {
-  it("creates Controller, Model, Migration and View (+ test) and warns about repositories", async () => {
+  it("creates Controller, Model, Service, Migration and View (+ test)", async () => {
     const { deps, cleanup } = createTestContext({ conventions: CI4_CONV });
     try {
       const result = await scaffoldFullResource(
@@ -312,6 +325,7 @@ describe("scaffold_full_resource with the ci4 profile", () => {
       if (!result.success) return;
       expect(result.filesCreated).toContain("app/Controllers/Patient.php");
       expect(result.filesCreated).toContain("app/Models/PatientModel.php");
+      expect(result.filesCreated).toContain("app/Services/PatientService.php");
       expect(result.filesCreated).toContain("app/Views/patient/index.php");
       expect(
         result.filesCreated.some((f) =>
@@ -323,6 +337,31 @@ describe("scaffold_full_resource with the ci4 profile", () => {
       ).toBe(true);
       expect(
         result.warnings.some((w) => w.includes("withRepository=true is ignored")),
+      ).toBe(false);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("withRepository=false omits the Service and warns", async () => {
+    const { deps, cleanup } = createTestContext({ conventions: CI4_CONV });
+    try {
+      const result = await scaffoldFullResource(
+        {
+          resourceName: "Patient",
+          fields: [{ name: "fullName", type: "string", required: true }],
+          withTests: false,
+          withRepository: false,
+        },
+        deps,
+      );
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(
+        result.filesCreated.some((f) => f.includes("PatientService.php")),
+      ).toBe(false);
+      expect(
+        result.warnings.some((w) => w.includes("withRepository=false")),
       ).toBe(true);
     } finally {
       cleanup();
@@ -351,6 +390,46 @@ describe("scaffold_full_resource with the ci4 profile", () => {
       if (!result.success) return;
       expect(result.filesCreated).toContain("app/Controllers/Order.php");
       expect(result.filesCreated).toContain("app/Models/OrderModel.php");
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+describe("scaffold_service with the ci4 profile", () => {
+  it("generates the Service and (with withRepository=true) the Model", async () => {
+    const { deps, cleanup } = createTestContext({ conventions: CI4_CONV });
+    try {
+      const result = await scaffoldService(
+        { resourceName: "Patient", withRepository: true },
+        deps,
+      );
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.filePath).toBe("app/Services/PatientService.php");
+      expect(result.written).toBe(true);
+      expect(result.additionalFilesCreated).toContain(
+        "app/Models/PatientModel.php",
+      );
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("withRepository=false generates only the Service and warns", async () => {
+    const { deps, cleanup } = createTestContext({ conventions: CI4_CONV });
+    try {
+      const result = await scaffoldService(
+        { resourceName: "Patient", withRepository: false },
+        deps,
+      );
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.filePath).toBe("app/Services/PatientService.php");
+      expect(result.additionalFilesCreated).toHaveLength(0);
+      expect(
+        result.warnings.some((w) => w.includes("withRepository=false")),
+      ).toBe(true);
     } finally {
       cleanup();
     }

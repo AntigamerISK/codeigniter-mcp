@@ -314,6 +314,35 @@ exit(0);
       "Path traversal outside APP_ROOT → ValidationError",
       JSON.stringify(evilPayload.error),
     );
+
+    /* 12. Runner failures are interpreted (no raw stack trace, no absolute paths) */
+    if (php) {
+      writeFileSync(
+        join(root, "bin", "migrate"),
+        `<?php
+fwrite(STDERR, "PHP Parse error:  syntax error, unexpected token \\"{}\\" in " . __DIR__ . "/app/Database/Migrations/2026_08_13_CreateOrders.php on line 12\\n");
+exit(1);
+`,
+        "utf8",
+      );
+      const failing = await client.request("tools/call", {
+        name: "run_migration",
+        arguments: { direction: "up", confirm: true },
+      });
+      const failingPayload = parsePayload(textOf(failing));
+      const exposed = `${failingPayload.error?.message ?? ""} ${failingPayload.error?.detail ?? ""}`;
+      report(
+        failingPayload.success === false &&
+          failingPayload.error?.type === "MigrationFailedError" &&
+          /PHP syntax error/i.test(failingPayload.error?.message ?? "") &&
+          !exposed.includes("CreateOrders") &&
+          !exposed.includes(root),
+        "Runner failure → actionable MigrationFailedError (no stack, no paths)",
+        JSON.stringify(failingPayload.error),
+      );
+    } else {
+      report(null, "Runner failure interpretation", "php not found — skipped");
+    }
   } finally {
     await client.close();
     rmSync(root, { recursive: true, force: true });

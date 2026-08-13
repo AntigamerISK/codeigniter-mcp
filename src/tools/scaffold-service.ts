@@ -18,12 +18,15 @@ import {
 import { handleToolCall, type ToolResult } from "../core/errors.js";
 import { safeWriteFile } from "../core/fs-safe.js";
 import { ScaffoldServiceInput } from "../schemas/scaffold-service.schema.js";
-import { renderCi4Model } from "../templates/ci4.template.js";
+import { renderCi4Model, renderCi4Service } from "../templates/ci4.template.js";
 import { renderServiceTemplate } from "../templates/service.template.js";
 
 export interface ScaffoldServicePayload {
+  /** Main generated file (spec: Service; ci4: Service). */
   filePath: string;
   written: boolean;
+  /** Extra files generated on top of the main one (ci4: the Model). */
+  additionalFilesCreated: string[];
   warnings: string[];
 }
 
@@ -35,17 +38,36 @@ export async function scaffoldService(
     const parsed = ScaffoldServiceInput.parse(input);
     const ctx = buildResourceContext(parsed.resourceName, []);
     const warnings: string[] = [];
+    const additionalFilesCreated: string[] = [];
 
     let rel: string;
     let content: string;
 
     if (deps.conventions.framework === "ci4") {
-      // In CI4 the "service" layer is the Model: data + business logic.
-      rel = `app/Models/${ctx.className}Model.php`;
-      content = renderCi4Model(ctx);
+      // CI4 Service: business logic layer that injects the Model.
+      rel = `app/Services/${ctx.className}Service.php`;
+      content = renderCi4Service(ctx);
       if (parsed.withRepository) {
+        // withRepository in ci4 means "also generate the Model" (the data
+        // layer the Service depends on).
+        const modelRel = `app/Models/${ctx.className}Model.php`;
+        const modelAbs = resolveInAppRoot(deps.appRoot, modelRel);
+        const modelResult = safeWriteFile(
+          modelAbs,
+          renderCi4Model(ctx),
+          parsed.overwrite,
+        );
+        if (modelResult.written) {
+          additionalFilesCreated.push(toRelativePath(deps.appRoot, modelAbs));
+        } else {
+          warnings.push(
+            `${modelRel} already exists and overwrite=false; not modified.`,
+          );
+        }
+      } else {
         warnings.push(
-          "withRepository is ignored in the ci4 profile: data access lives in the Model.",
+          "withRepository=false: the Service was generated without the Model. " +
+            "Generate the Model with scaffold_full_resource or with withRepository=true.",
         );
       }
     } else {
@@ -78,6 +100,7 @@ export async function scaffoldService(
     return {
       filePath: relative,
       written: result.written,
+      additionalFilesCreated,
       warnings: result.written
         ? warnings
         : [...warnings, `${relative} already exists and overwrite=false; not modified.`],

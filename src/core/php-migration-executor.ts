@@ -18,6 +18,11 @@
 
 import { spawn } from "node:child_process";
 import { MigrationCommands, MigrationExecutor } from "./config.js";
+import { MigrationFailedError } from "./errors.js";
+import {
+  filterExecutedMigrationLines,
+  interpretPhpRunnerError,
+} from "./migration-errors.js";
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 
@@ -117,24 +122,20 @@ export class PhpMigrationExecutor implements MigrationExecutor {
     const result = await runProcess(command, rest, appRoot, this.timeoutMs);
 
     if (result.code !== 0) {
-      const detail = result.stderr.trim().split(/\r?\n/).at(-1) ?? "";
-      const reason = detail.length > 0 ? `: ${sanitizeLine(detail)}` : ".";
-      throw new Error(`Migration runner failed (code ${result.code})${reason}`);
+      const { message, rawLines } = interpretPhpRunnerError(
+        result.stdout,
+        result.stderr,
+      );
+      throw new MigrationFailedError(
+        `Migration runner failed (code ${result.code}): ${message}`,
+        rawLines.join("\n"),
+      );
     }
 
-    const executed = result.stdout
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
+    // Only count lines that reference an actual migration file; spark prints
+    // table headers/status lines that are not executed migrations.
+    const executed = filterExecutedMigrationLines(result.stdout);
 
     return { executed };
   }
-}
-
-/** Strips any absolute path from an error line before exposing it. */
-function sanitizeLine(line: string): string {
-  return line
-    .replace(/[A-Za-z]:\\[^\s:]*/g, "<path>")
-    .replace(/\/[^\s:]*\/(app|bin|tests)\b/g, "<path>")
-    .slice(0, 300);
 }

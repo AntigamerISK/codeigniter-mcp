@@ -149,6 +149,56 @@ ${rules}
 `;
 }
 
+/**
+ * CI4 Service: business logic separated from the controller, with the Model
+ * injected. Mirrors the spec profile's Service role in native CI4 style
+ * (no strict_types, snake_case methods).
+ */
+export function renderCi4Service(ctx: ResourceContext): string {
+  const { className } = ctx;
+  return `<?php
+
+namespace App\\Services;
+
+use App\\Models\\${className}Model;
+
+class ${className}Service
+{
+    protected $model;
+
+    public function __construct()
+    {
+        $this->model = new ${className}Model();
+    }
+
+    public function all()
+    {
+        return $this->model->findAll();
+    }
+
+    public function find($id)
+    {
+        return $this->model->find($id);
+    }
+
+    public function create(array $data)
+    {
+        return $this->model->insert($data);
+    }
+
+    public function update($id, array $data)
+    {
+        return $this->model->update($id, $data);
+    }
+
+    public function delete($id)
+    {
+        return $this->model->delete($id);
+    }
+}
+`;
+}
+
 export function renderCi4Model(ctx: ResourceContext): string {
   const { className, tableName } = ctx;
   const allowed = ctx.fields.map((field) => `'${field.name}'`).join(", ");

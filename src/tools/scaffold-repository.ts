@@ -40,8 +40,9 @@ export async function scaffoldRepository(
       return {
         filesCreated: [],
         warnings: [
-          "scaffold_repository is not applicable in the ci4 profile: CI4 handles data access " +
-            "through Models. Use scaffold_service (generates the Model) or scaffold_full_resource.",
+          "scaffold_repository is not applicable in the ci4 profile: CI4 handles data " +
+            "access through Models. Use scaffold_service (generates the Service, and the " +
+            "Model with withRepository=true) or scaffold_full_resource.",
         ],
       };
     }
