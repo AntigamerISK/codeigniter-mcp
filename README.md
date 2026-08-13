@@ -346,11 +346,24 @@ APP_ROOT=/path/to/mi-framework npm run inspector
 Run the end-to-end acceptance checklist against a throwaway framework skeleton
 (no cleanup needed, it deletes itself):
 
+Run the checklist against the **local build**:
+
 ```bash
-npm run build   # once, so dist/ is up to date
-npm run verify  # tests the local build
-# or test the published package:
+npm run build
+npm run verify
+```
+
+Test the **published package** instead:
+
+```bash
+# bash (macOS / Linux)
 VERIFY_MCP_COMMAND="npx -y codeigniter-mcp" npm run verify
+```
+
+```powershell
+# PowerShell (Windows)
+$env:VERIFY_MCP_COMMAND = "npx -y codeigniter-mcp"
+node scripts/verify-mcp.mjs
 ```
 
 It reports ✅/❌ per criterion: handshake, 7 tools, 4 resources, full CRUD
